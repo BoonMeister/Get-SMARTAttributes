@@ -7,7 +7,7 @@ Retrieves hard drive SMART attributes
 DESCRIPTION
 -----------
 The Get-SMARTAttributes function can be used to retrieve SMART (Self-Monitoring, Analysis
-and Reporting Technology) attributes from one or more hard drives on the local computer by
+and Reporting Technology) attributes from one or more hard drives on a computer by
 querying the MSStorageDriver_ATAPISmartData & MSStorageDriver_FailurePredictThresholds
 classes, provided SMART is supported and enabled on the drive(s). The results include the
 attribute ID, attribute name, current/worse/threshold values, status (current > threshold),
@@ -40,6 +40,10 @@ diskpart or a related PowerShell function/command such as Get-Disk on Win10.
 
 The serial number of a disk to query. This is an alternative filtering
 parameter to the disk index.
+
+-ComputerName (String)
+
+The name or IP address of a computer to query. The default is the local PC.
 
 INPUTS
 ------
