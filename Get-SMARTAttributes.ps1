@@ -8,7 +8,7 @@ New-Module -Name $ModuleName -ScriptBlock {
             Retrieves hard drive SMART attributes
         .DESCRIPTION
             The Get-SMARTAttributes function can be used to retrieve SMART (Self-Monitoring, Analysis
-            and Reporting Technology) attributes from one or more hard drives on the local computer by
+            and Reporting Technology) attributes from one or more hard drives on a computer by
             querying the MSStorageDriver_ATAPISmartData & MSStorageDriver_FailurePredictThresholds
             classes, provided SMART is supported and enabled on the drive(s). The results include the
             attribute ID, attribute name, current/worse/threshold values, status (current > threshold),
@@ -30,6 +30,8 @@ New-Module -Name $ModuleName -ScriptBlock {
         .PARAMETER SerialNumber
             The serial number of a disk to query. This is an alternative filtering
             parameter to the disk index.
+        .PARAMETER ComputerName
+            The name or IP address of a computer to query. The default is the local PC.
         .INPUTS
             System.Int32, System.String
             You can pipe an object to this function with a valid property name & type
@@ -73,7 +75,10 @@ New-Module -Name $ModuleName -ScriptBlock {
             [int]$DiskIndex,
             [Parameter(Mandatory=$True,ValueFromPipelineByPropertyName=$True,ParameterSetName="Serial")]
             [Alias("Serial Number","Serial")]
-            [string]$SerialNumber
+            [string]$SerialNumber,
+            [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True,Position=1)]
+            [Alias("Computer Name","Server","Computer","CsName","IPAddress","CN","Name")]
+            [string]$ComputerName = $env:COMPUTERNAME
         )
         Begin {
             $RealValueArray = @(3,4,5,9,10,12,171,172,173,174,176,177,179,180,181,182,183,184,187,188,189,190,193,194,196,197,198,199,235,240,241,242,243)
@@ -164,15 +169,15 @@ New-Module -Name $ModuleName -ScriptBlock {
             If ($PSBoundParameters.ContainsKey("DiskIndex")) {$FilterQuery = "Index = '$DiskIndex'"}
             ElseIf ($PSBoundParameters.ContainsKey("SerialNumber")) {$FilterQuery = "SerialNumber = '$SerialNumber'"}
             Else {$FilterQuery = "Index = '$DiskIndex'"}
-            Try {$SelectedDisk = Get-CimInstance -ClassName Win32_DiskDrive -Filter $FilterQuery -ErrorAction Stop}
+            Try {$SelectedDisk = Get-CimInstance -ClassName Win32_DiskDrive -Filter $FilterQuery -ComputerName $ComputerName -ErrorAction Stop}
             Catch {Throw "An exception has occurred - The latest error in the stream is:`r`n'$($Error[0].Exception)'"}
             If (($SelectedDisk | Measure).Count -eq 0) {Throw "No disk was found that matched the filter query '$FilterQuery'"}
             ElseIf (($SelectedDisk | Measure).Count -gt 1) {Throw "More than one disk was found that matched the filter query '$FilterQuery'"}
             Else {
                 # Get SMART & threshold data
                 Try {
-                    $SMARTAttributeData = Get-CimInstance -Namespace root\wmi -ClassName MSStorageDriver_ATAPISmartData -ErrorAction Stop | Where {$_.InstanceName -like "*$($SelectedDisk.PNPDeviceID)*"}
-                    $ThresholdData = Get-CimInstance -Namespace root\wmi -ClassName MSStorageDriver_FailurePredictThresholds -ErrorAction Stop | Where {$_.InstanceName -like "*$($SelectedDisk.PNPDeviceID)*"}
+                    $SMARTAttributeData = Get-CimInstance -Namespace root\wmi -ClassName MSStorageDriver_ATAPISmartData -ComputerName $ComputerName -ErrorAction Stop | Where {$_.InstanceName -like "*$($SelectedDisk.PNPDeviceID)*"}
+                    $ThresholdData = Get-CimInstance -Namespace root\wmi -ClassName MSStorageDriver_FailurePredictThresholds -ComputerName $ComputerName -ErrorAction Stop | Where {$_.InstanceName -like "*$($SelectedDisk.PNPDeviceID)*"}
                 }
                 Catch {Throw "An exception has occurred - The latest error in the stream is:`r`n'$($Error[0].Exception)'"}
             }
@@ -210,7 +215,7 @@ New-Module -Name $ModuleName -ScriptBlock {
                             Else {$RawInt = [System.Convert]::ToInt64($RawValue,16)}
                             Switch ([int]$CurrentAtt[1]) {
                                 3 { # Spin up time
-                                    $RealValue = "$RawInt ms"
+                                    $RealValue = $RawInt.ToString('N0') + " ms"
                                     Break
                                 }
                                 9 { # Power on hours
@@ -242,6 +247,7 @@ New-Module -Name $ModuleName -ScriptBlock {
                         Else {$RealValue = "0"}
                         # Create object and add to final array
                         $AttributeObj = New-Object PsObject
+                        If ($ComputerName -ne $env:COMPUTERNAME) {$AttributeObj | Add-Member -MemberType NoteProperty -Name ComputerName -Value "$ComputerName"}
                         $AttributeObj | Add-Member -MemberType NoteProperty -Name SerialNo -Value "$($SelectedDisk.SerialNumber.Trim())"
                         $AttributeObj | Add-Member -MemberType NoteProperty -Name Index -Value "$($SelectedDisk.Index)"
                         $AttributeObj | Add-Member -MemberType NoteProperty -Name AttID -Value "$AttributeIDHex"
