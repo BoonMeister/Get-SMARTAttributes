@@ -26,8 +26,8 @@ to determine accuracy, such as CrystalDiskInfo, Speccy & smartmontools/smartctl.
 
 SYNTAX
 ------
-    Get-SMARTAttributes -DiskIndex <Int32>
-    Get-SMARTAttributes -SerialNumber <String>
+    Get-SMARTAttributes [-DiskIndex] <Int32> [[-ComputerName] <String>]
+    Get-SMARTAttributes -SerialNumber <String> [[-ComputerName] <String>]
 
 PARAMETERS
 ----------
@@ -64,19 +64,19 @@ EXAMPLES
 
 - Get attributes of disk with index 0:
 
-      Get-SMARTAttributes -DiskIndex 0
+        Get-SMARTAttributes -DiskIndex 0
 
 - Get attributes of disk by serial and format results as a table:
 
-      Get-SMARTAttributes -SerialNumber "S2Y9NB0J636098" | Format-Table
+        Get-SMARTAttributes -SerialNumber "S2Y9NB0J636098" | Format-Table
 
 - Pipe results/objects from Get-Disk to get attributes of all disks on system, provided they are all supported:
 
-      Get-Disk | Get-SMARTAttributes | Format-Table
+        Get-Disk | Get-SMARTAttributes | Format-Table
 
 - Same as last example for pre-Windows 10 systems or for PowerShell version 1/2:
 
-      Get-WmiObject -Class Win32_DiskDrive | Get-SMARTAttributes | Format-Table
+        Get-WmiObject -Class Win32_DiskDrive | Get-SMARTAttributes | Format-Table
 
 NOTES
 -----
