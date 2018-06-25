@@ -77,7 +77,7 @@ New-Module -Name $ModuleName -ScriptBlock {
             [Alias("Serial Number","Serial")]
             [string]$SerialNumber,
             [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True,Position=1)]
-            [Alias("Computer Name","Server","Computer","CsName","IPAddress","CN","Name")]
+            [Alias("Computer Name","Server","Computer","CsName","IPAddress","CN","Name","PSComputerName")]
             [string]$ComputerName = $env:COMPUTERNAME
         )
         Begin {
@@ -169,17 +169,17 @@ New-Module -Name $ModuleName -ScriptBlock {
             If ($PSBoundParameters.ContainsKey("DiskIndex")) {$FilterQuery = "Index = '$DiskIndex'"}
             ElseIf ($PSBoundParameters.ContainsKey("SerialNumber")) {$FilterQuery = "SerialNumber = '$SerialNumber'"}
             Else {$FilterQuery = "Index = '$DiskIndex'"}
-            Try {$SelectedDisk = Get-CimInstance -ClassName Win32_DiskDrive -Filter $FilterQuery -ComputerName $ComputerName -ErrorAction Stop}
-            Catch {Throw "An exception has occurred - The latest error in the stream is:`r`n'$($Error[0].Exception)'"}
+            Try {$SelectedDisk = Get-WmiObject -Class Win32_DiskDrive -Filter $FilterQuery -ComputerName $ComputerName -ErrorAction Stop}
+            Catch {Throw "An exception has occurred - The latest error in the stream is:`r`n'$($Error[1].Exception)'"}
             If (($SelectedDisk | Measure).Count -eq 0) {Throw "No disk was found that matched the filter query '$FilterQuery'"}
             ElseIf (($SelectedDisk | Measure).Count -gt 1) {Throw "More than one disk was found that matched the filter query '$FilterQuery'"}
             Else {
                 # Get SMART & threshold data
                 Try {
-                    $SMARTAttributeData = Get-CimInstance -Namespace root\wmi -ClassName MSStorageDriver_ATAPISmartData -ComputerName $ComputerName -ErrorAction Stop | Where {$_.InstanceName -like "*$($SelectedDisk.PNPDeviceID)*"}
-                    $ThresholdData = Get-CimInstance -Namespace root\wmi -ClassName MSStorageDriver_FailurePredictThresholds -ComputerName $ComputerName -ErrorAction Stop | Where {$_.InstanceName -like "*$($SelectedDisk.PNPDeviceID)*"}
+                    $SMARTAttributeData = Get-WmiObject -Namespace root\wmi -Class MSStorageDriver_ATAPISmartData -ComputerName $ComputerName -ErrorAction Stop | Where {$_.InstanceName -like "*$($SelectedDisk.PNPDeviceID)*"}
+                    $ThresholdData = Get-WmiObject -Namespace root\wmi -Class MSStorageDriver_FailurePredictThresholds -ComputerName $ComputerName -ErrorAction Stop | Where {$_.InstanceName -like "*$($SelectedDisk.PNPDeviceID)*"}
                 }
-                Catch {Throw "An exception has occurred - The latest error in the stream is:`r`n'$($Error[0].Exception)'"}
+                Catch {Throw "An exception has occurred - The latest error in the stream is:`r`n'$($Error[1].Exception)'"}
             }
             If (($SMARTAttributeData | Measure).Count -eq 0) {Throw "Could not retrieve SMART data for the specified disk. Please ensure the disk is capable and SMART is enabled"}
             ElseIf (($SMARTAttributeData | Measure).Count -eq 1) {
