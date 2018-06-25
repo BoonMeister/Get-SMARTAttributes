@@ -76,8 +76,7 @@ New-Module -Name $ModuleName -ScriptBlock {
             [Parameter(Mandatory=$True,ValueFromPipelineByPropertyName=$True,ParameterSetName="Serial")]
             [Alias("Serial Number","Serial")]
             [string]$SerialNumber,
-            [Parameter(Mandatory=$False,ValueFromPipelineByPropertyName=$True,Position=1)]
-            [Alias("Computer Name","Server","Computer","CsName","IPAddress","CN","Name","PSComputerName")]
+            [Parameter(Mandatory=$False,Position=1)]
             [string]$ComputerName = $env:COMPUTERNAME
         )
         Begin {
