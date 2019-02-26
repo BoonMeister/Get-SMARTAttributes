@@ -80,6 +80,7 @@ New-Module -Name $ModuleName -ScriptBlock {
             [string]$ComputerName = $env:COMPUTERNAME
         )
         Begin {
+            $Error.Clear()
             $RealValueArray = @(3,4,5,9,10,12,171,172,173,174,176,177,179,180,181,182,183,184,187,188,189,190,193,194,196,197,198,199,235,240,241,242,243)
             $AttIDToName = @{
                 1 = 'RawReadErrorRate'
@@ -169,7 +170,7 @@ New-Module -Name $ModuleName -ScriptBlock {
             ElseIf ($PSBoundParameters.ContainsKey("SerialNumber")) {$FilterQuery = "SerialNumber = '$SerialNumber'"}
             Else {$FilterQuery = "Index = '$DiskIndex'"}
             Try {$SelectedDisk = Get-WmiObject -Class Win32_DiskDrive -Filter $FilterQuery -ComputerName $ComputerName -ErrorAction Stop}
-            Catch {Throw "An exception has occurred - The latest error in the stream is:`r`n'$($Error[1].Exception)'"}
+            Catch {Throw "An unexpected exception has occurred"}
             If (($SelectedDisk | Measure).Count -eq 0) {Throw "No disk was found that matched the filter query '$FilterQuery'"}
             ElseIf (($SelectedDisk | Measure).Count -gt 1) {Throw "More than one disk was found that matched the filter query '$FilterQuery'"}
             Else {
@@ -178,7 +179,8 @@ New-Module -Name $ModuleName -ScriptBlock {
                     $SMARTAttributeData = Get-WmiObject -Namespace root\wmi -Class MSStorageDriver_ATAPISmartData -ComputerName $ComputerName -ErrorAction Stop | Where {$_.InstanceName -like "*$($SelectedDisk.PNPDeviceID)*"}
                     $ThresholdData = Get-WmiObject -Namespace root\wmi -Class MSStorageDriver_FailurePredictThresholds -ComputerName $ComputerName -ErrorAction Stop | Where {$_.InstanceName -like "*$($SelectedDisk.PNPDeviceID)*"}
                 }
-                Catch {Throw "An exception has occurred - The latest error in the stream is:`r`n'$($Error[1].Exception)'"}
+                Catch [System.Management.ManagementException] {Throw "Access was denied when querying SMART data - Please ensure you are running as Admin or with the necessary privileges"}
+                Catch {Throw "An unexpected exception has occurred"}
             }
             If (($SMARTAttributeData | Measure).Count -eq 0) {Throw "Could not retrieve SMART data for the specified disk. Please ensure the disk is capable and SMART is enabled"}
             ElseIf (($SMARTAttributeData | Measure).Count -eq 1) {
