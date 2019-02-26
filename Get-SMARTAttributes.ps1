@@ -251,6 +251,7 @@ New-Module -Name $ModuleName -ScriptBlock {
                         If ($ComputerName -ne $env:COMPUTERNAME) {$AttributeObj | Add-Member -MemberType NoteProperty -Name ComputerName -Value "$ComputerName"}
                         $AttributeObj | Add-Member -MemberType NoteProperty -Name SerialNo -Value "$($SelectedDisk.SerialNumber.Trim())"
                         $AttributeObj | Add-Member -MemberType NoteProperty -Name Index -Value "$($SelectedDisk.Index)"
+                        $AttributeObj | Add-Member -MemberType NoteProperty -Name Caption -Value "$($SelectedDisk.Caption)"
                         $AttributeObj | Add-Member -MemberType NoteProperty -Name AttID -Value "$AttributeIDHex"
                         $AttributeObj | Add-Member -MemberType NoteProperty -Name AttName -Value $AttributeName
                         $AttributeObj | Add-Member -MemberType NoteProperty -Name RealValue -Value $RealValue
