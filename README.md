@@ -28,6 +28,7 @@ SYNTAX
 ------
     Get-SMARTAttributes [-DiskIndex] <Int32> [[-ComputerName] <String>]
     Get-SMARTAttributes -SerialNumber <String> [[-ComputerName] <String>]
+    Get-SMARTAttributes -Caption <String> [[-ComputerName] <String>]
 
 PARAMETERS
 ----------
