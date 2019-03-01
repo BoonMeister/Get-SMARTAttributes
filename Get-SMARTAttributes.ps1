@@ -37,7 +37,7 @@ New-Module -Name $ModuleName -ScriptBlock {
         .INPUTS
             System.Int32, System.String
             You can pipe an object to this function with a valid property name & type
-            representing either the disk index or serial number.
+            representing the disk index.
         .OUTPUTS
             System.Management.Automation.PSCustomObject
             This function generates an array of PsObjects with each object
@@ -74,7 +74,7 @@ New-Module -Name $ModuleName -ScriptBlock {
         Param(
             [Parameter(Mandatory=$True,ValueFromPipelineByPropertyName=$True,ParameterSetName="Index",Position=0)]
             [Alias("Index","Number","DiskNumber")]
-            [int]$DiskIndex,
+            [uint32]$DiskIndex,
             [Parameter(Mandatory=$True,ParameterSetName="Serial")]
             [Alias("Serial Number","Serial")]
             [string]$SerialNumber,
