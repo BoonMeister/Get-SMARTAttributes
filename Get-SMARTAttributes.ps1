@@ -28,8 +28,10 @@ New-Module -Name $ModuleName -ScriptBlock {
             The index number of a disk to query. This is the number detailed in diskmgmt,
             diskpart or a related PowerShell function/command such as Get-Disk on Win10.
         .PARAMETER SerialNumber
-            The serial number of a disk to query. This is an alternative filtering
-            parameter to the disk index.
+            The serial number of a disk to query.
+        .PARAMETER Caption
+            The caption/friendly name of a disk to query. This is the same name found in 
+            the 'Disk Drives' section of Device Manager.
         .PARAMETER ComputerName
             The name or IP address of a computer to query. The default is the local PC.
         .INPUTS
@@ -73,9 +75,12 @@ New-Module -Name $ModuleName -ScriptBlock {
             [Parameter(Mandatory=$True,ValueFromPipelineByPropertyName=$True,ParameterSetName="Index",Position=0)]
             [Alias("Index","Number","DiskNumber")]
             [int]$DiskIndex,
-            [Parameter(Mandatory=$True,ValueFromPipelineByPropertyName=$True,ParameterSetName="Serial")]
+            [Parameter(Mandatory=$True,ParameterSetName="Serial")]
             [Alias("Serial Number","Serial")]
             [string]$SerialNumber,
+            [Parameter(Mandatory=$True,ParameterSetName="Caption")]
+            [Alias("Model","Friendly Name")]
+            [string]$Caption,
             [Parameter(Mandatory=$False,Position=1)]
             [string]$ComputerName = $env:COMPUTERNAME
         )
@@ -168,9 +173,10 @@ New-Module -Name $ModuleName -ScriptBlock {
             # Determine disk
             If ($PSBoundParameters.ContainsKey("DiskIndex")) {$FilterQuery = "Index = '$DiskIndex'"}
             ElseIf ($PSBoundParameters.ContainsKey("SerialNumber")) {$FilterQuery = "SerialNumber = '$SerialNumber'"}
+            ElseIf ($PSBoundParameters.ContainsKey("Caption")) {$FilterQuery = "Caption = '$Caption'"}
             Else {$FilterQuery = "Index = '$DiskIndex'"}
             Try {$SelectedDisk = Get-WmiObject -Class Win32_DiskDrive -Filter $FilterQuery -ComputerName $ComputerName -ErrorAction Stop}
-            Catch {Throw "An unexpected exception has occurred"}
+            Catch {Throw "An unexpected exception has occurred querying WMI for disk info"}
             If (($SelectedDisk | Measure).Count -eq 0) {Throw "No disk was found that matched the filter query '$FilterQuery'"}
             ElseIf (($SelectedDisk | Measure).Count -gt 1) {Throw "More than one disk was found that matched the filter query '$FilterQuery'"}
             Else {
@@ -180,9 +186,9 @@ New-Module -Name $ModuleName -ScriptBlock {
                     $ThresholdData = Get-WmiObject -Namespace root\wmi -Class MSStorageDriver_FailurePredictThresholds -ComputerName $ComputerName -ErrorAction Stop | Where {$_.InstanceName -like "*$($SelectedDisk.PNPDeviceID)*"}
                 }
                 Catch [System.Management.ManagementException] {Throw "Access was denied when querying SMART data - Please ensure you are running as Admin or with the necessary privileges"}
-                Catch {Throw "An unexpected exception has occurred"}
+                Catch {Throw "An unexpected exception has occurred querying SMART and threshold data for [$($SelectedDisk.Caption)]"}
             }
-            If (($SMARTAttributeData | Measure).Count -eq 0) {Throw "Could not retrieve SMART data for the specified disk. Please ensure the disk is capable and SMART is enabled"}
+            If (($SMARTAttributeData | Measure).Count -eq 0) {Throw "Could not retrieve SMART data for the disk [$($SelectedDisk.Caption)]. Please ensure the disk is capable and SMART is enabled"}
             ElseIf (($SMARTAttributeData | Measure).Count -eq 1) {
                 # Select threshold data and determine loop count
                 $AttributeThresholds = ($ThresholdData.VendorSpecific)[2..($ThresholdData.VendorSpecific.Count - 1)]
