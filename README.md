@@ -39,8 +39,12 @@ diskpart or a related PowerShell function/command such as Get-Disk on Win10.
 
 -SerialNumber (String)
 
-The serial number of a disk to query. This is an alternative filtering
-parameter to the disk index.
+The serial number of a disk to query.
+
+-Caption (String)
+
+The caption/friendly name of a disk to query. This is the same name found in 
+the 'Disk Drives' section of Device Manager.
 
 -ComputerName (String)
 
@@ -51,7 +55,7 @@ INPUTS
 System.Int32, System.String
 
 You can pipe an object to this function with a valid property name & type
-representing either the disk index or serial number.
+representing the disk index.
 
 OUTPUTS
 -------
