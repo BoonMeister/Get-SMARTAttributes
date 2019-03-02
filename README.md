@@ -26,13 +26,13 @@ to determine accuracy, such as CrystalDiskInfo, Speccy & smartmontools/smartctl.
 
 SYNTAX
 ------
-    Get-SMARTAttributes [-DiskIndex] <Int32> [[-ComputerName] <String>]
-    Get-SMARTAttributes -SerialNumber <String> [[-ComputerName] <String>]
-    Get-SMARTAttributes -Caption <String> [[-ComputerName] <String>]
+    Get-SMARTAttributes [-DiskIndex] <UInt32> [[-ComputerName] <String>] [-NoWarning]
+    Get-SMARTAttributes -SerialNumber <String> [[-ComputerName] <String>] [-NoWarning]
+    Get-SMARTAttributes -Caption <String> [[-ComputerName] <String>] [-NoWarning]
 
 PARAMETERS
 ----------
--DiskIndex (Int32)
+-DiskIndex (UInt32)
 
 The index number of a disk to query. This is the number detailed in diskmgmt,
 diskpart or a related PowerShell function/command such as Get-Disk on Win10.
@@ -50,12 +50,15 @@ the 'Disk Drives' section of Device Manager.
 
 The name or IP address of a computer to query. The default is the local PC.
 
+-NoWarning (Switch)
+
+Supresses warnings when no data is returned for a disk.
+
 INPUTS
 ------
-System.Int32, System.String
+System.UInt32
 
-You can pipe an object to this function with a valid property name & type
-representing the disk index.
+You can pipe an object to this function with a valid property name representing the disk index.
 
 OUTPUTS
 -------
