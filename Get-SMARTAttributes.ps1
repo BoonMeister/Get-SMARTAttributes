@@ -34,10 +34,11 @@ New-Module -Name $ModuleName -ScriptBlock {
             the 'Disk Drives' section of Device Manager.
         .PARAMETER ComputerName
             The name or IP address of a computer to query. The default is the local PC.
+        .PARAMETER NoWarning
+            Supresses warnings when no data is returned for a disk.
         .INPUTS
-            System.Int32, System.String
-            You can pipe an object to this function with a valid property name & type
-            representing the disk index.
+            System.Int32
+            You can pipe an object to this function with a valid property name representing the disk index.
         .OUTPUTS
             System.Management.Automation.PSCustomObject
             This function generates an array of PsObjects with each object
@@ -82,7 +83,9 @@ New-Module -Name $ModuleName -ScriptBlock {
             [Alias("Model","Friendly Name")]
             [string]$Caption,
             [Parameter(Mandatory=$False,Position=1)]
-            [string]$ComputerName = $env:COMPUTERNAME
+            [string]$ComputerName = $env:COMPUTERNAME,
+            [Parameter(Mandatory=$False)]
+            [switch]$NoWarning = $False
         )
         Begin {
             $Error.Clear()
@@ -188,13 +191,13 @@ New-Module -Name $ModuleName -ScriptBlock {
                 Catch [System.Management.ManagementException] {Throw "Access was denied when querying SMART data - Please ensure you are running as Admin or with the necessary privileges"}
                 Catch {Throw "An unexpected exception has occurred querying SMART and threshold data for [$($SelectedDisk.Caption)]"}
             }
-            If (($SMARTAttributeData | Measure).Count -eq 0) {Throw "Could not retrieve SMART data for the disk [$($SelectedDisk.Caption)]. Please ensure the disk is capable and SMART is enabled"}
+            If (($SMARTAttributeData | Measure).Count -eq 0 -and !$NoWarning) {Write-Warning -Message "Could not retrieve SMART data for the disk [$($SelectedDisk.Caption)]. Please ensure the disk is capable and SMART is enabled"}
             ElseIf (($SMARTAttributeData | Measure).Count -eq 1) {
                 # Select threshold data and determine loop count
                 $AttributeThresholds = ($ThresholdData.VendorSpecific)[2..($ThresholdData.VendorSpecific.Count - 1)]
                 $ThresholdLoopCount = [System.Math]::Floor($AttributeThresholds.Count/12)
-                $AttIDToThreshold = @{}
                 # Create hash table of attribute IDs to threshold values
+                $AttIDToThreshold = @{}
                 For ($ThreshIterate = 0; $ThreshIterate -lt $ThresholdLoopCount; $ThreshIterate++) {
                     If ($AttributeThresholds[($ThreshIterate*12)] -ne 0) {
                         $AttIDToThreshold.Add($AttributeThresholds[($ThreshIterate*12)],$AttributeThresholds[($ThreshIterate*12+1)])
@@ -203,12 +206,13 @@ New-Module -Name $ModuleName -ScriptBlock {
                 # Select SMART data and determine loop count
                 $VendorSpecData = $SMARTAttributeData.VendorSpecific
                 $AttLoopCount = [System.Math]::Floor($VendorSpecData.Count/12)
+                # Loop through spec data array in chunks of 12
                 $StartIndex,$EndIndex = 1,12
                 $ResultArray = @()
-                # Construct data 
                 For ($AttIterate = 0; $AttIterate -lt $AttLoopCount; $AttIterate++) {
                     $CurrentAtt = $VendorSpecData[$StartIndex..$EndIndex]
-                    If ($CurrentAtt[1] -ne 0) {
+                    If ([int]$CurrentAtt[1] -ne 0) {
+                        # Construct data
                         $RawValue = [System.BitConverter]::ToString([byte[]]($CurrentAtt[11],$CurrentAtt[10],$CurrentAtt[9],$CurrentAtt[8],$CurrentAtt[7],$CurrentAtt[6])) -replace "-"
                         $AttributeIDHex = "0x" + [System.BitConverter]::ToString([byte]$CurrentAtt[1])
                         $ThresholdValue = $AttIDToThreshold.([byte]$CurrentAtt[1])
